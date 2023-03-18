@@ -32,15 +32,25 @@ local function next_sibling(initial_node)
   local siblings = tsu.get_named_children(initial_node:parent());
   local found = false
 
+  local initial_row = vim.api.nvim_win_get_cursor(0)[1]
+
+  local current_index = 1
+
   for i, sibling in ipairs(siblings) do
     if sibling == initial_node and siblings[i + 1] ~= nil then
-      tsu.goto_node(siblings[i + 1])
-      found = true
+      -- found = true
+      current_index = i
+      -- tsu.goto_node(siblings[i + 1])
     end
   end
 
-  if not found then
-    print('nope')
+
+  while current_index < #siblings and siblings[current_index] ~= nil and vim.api.nvim_win_get_cursor(0)[1] == initial_row do
+    tsu.goto_node(siblings[current_index]);
+    current_index = current_index + 1;
+  end
+
+  while vim.api.nvim_win_get_cursor(0)[1] <= initial_row and initial_node:parent() ~= nil do
     next_sibling(initial_node:parent())
   end
 end
