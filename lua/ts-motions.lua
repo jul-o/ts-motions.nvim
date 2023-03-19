@@ -1,17 +1,54 @@
 local tsu = require('nvim-treesitter.ts_utils');
 
-local function child() 
-  local current_node = tsu.get_node_at_cursor();
+-- local function child() 
+--   local current_node = tsu.get_node_at_cursor();
+--
+--   local children = tsu.get_named_children(current_node);
+--   if children[1] then
+--     tsu.goto_node(children[1]);
+--   else
+--     tsu.goto_node(tsu.get_next_node(current_node, true, true))
+--   end
+--   if (tsu.get_named_children(tsu.get_node_at_cursor())[1] or tsu.get_next_node(tsu.get_node_at_cursor(), true, true))
+--     and tsu.get_node_at_cursor():start() == current_node:start() then
+--     child();
+--   end
+-- end
 
-  local children = tsu.get_named_children(current_node);
-  if children[1] then
-    tsu.goto_node(children[1]);
-  else
-    tsu.goto_node(tsu.get_next_node(current_node, true, true))
-  end
-    if tsu.get_node_at_cursor():start() == current_node:start() then
-      child();
+local function has_child_on_other_line(node)
+  local children = tsu.get_named_children(node);
+
+  for _, child in ipairs(children) do
+    if child:start() ~= node:start() or has_child_on_other_line(child) then
+      return true;
     end
+  end
+
+  return false;
+end
+
+local function child()
+  local current_node = tsu.get_node_at_cursor();
+  local children = tsu.get_named_children(current_node);
+
+  if #children == 0 then
+    return false;
+  end
+
+  for _, son in ipairs(children) do
+    if son:start() ~= current_node:start() or has_child_on_other_line(son) then
+      tsu.goto_node(son);
+      if son:start() == current_node:start() then
+        child();
+      end
+      return true;
+    end
+  end
+
+  tsu.goto_node(tsu.get_next_node(current_node, true, true));
+  if tsu.get_node_at_cursor():start() == current_node:start() then
+    child();
+  end
 end
 
 local function parent()
@@ -22,10 +59,15 @@ local function parent()
   local current_position = initial_position;
 
   while current_position[1] == initial_position[1]
-    and current_position[2] == initial_position[2] 
+    -- and current_position[2] == initial_position[2] 
     and parent ~= nil do
     tsu.goto_node(parent);
     current_position = vim.api.nvim_win_get_cursor(0);
+    parent = parent:parent();
+  end
+
+  while parent ~= nil and parent:parent() ~= nil and parent:start() == tsu.get_node_at_cursor():start() do
+    tsu.goto_node(parent)
     parent = parent:parent();
   end
 end
@@ -38,7 +80,7 @@ local function next_sibling(initial_node)
   local siblings = tsu.get_named_children(initial_node:parent());
   local initial_row = vim.api.nvim_win_get_cursor(0)[1]
   local current_index = 1
-  
+
   while current_index <= #siblings do
     if siblings[current_index]:start() >= initial_row then
       tsu.goto_node(siblings[current_index]);
