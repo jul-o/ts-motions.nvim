@@ -9,6 +9,9 @@ local function child()
   else
     tsu.goto_node(tsu.get_next_node(current_node, true, true))
   end
+    if tsu.get_node_at_cursor():start() == current_node:start() then
+      child();
+    end
 end
 
 local function parent()
