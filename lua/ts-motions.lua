@@ -1,20 +1,5 @@
 local tsu = require('nvim-treesitter.ts_utils');
 
--- local function child() 
---   local current_node = tsu.get_node_at_cursor();
---
---   local children = tsu.get_named_children(current_node);
---   if children[1] then
---     tsu.goto_node(children[1]);
---   else
---     tsu.goto_node(tsu.get_next_node(current_node, true, true))
---   end
---   if (tsu.get_named_children(tsu.get_node_at_cursor())[1] or tsu.get_next_node(tsu.get_node_at_cursor(), true, true))
---     and tsu.get_node_at_cursor():start() == current_node:start() then
---     child();
---   end
--- end
-
 local function has_child_on_other_line(node)
   local children = tsu.get_named_children(node);
 
@@ -45,8 +30,8 @@ local function child()
     end
   end
 
-  tsu.goto_node(tsu.get_next_node(current_node, true, true));
-  if tsu.get_node_at_cursor():start() == current_node:start() then
+  if tsu.get_next_node(current_node, true, true):start() == current_node:start() then
+    tsu.goto_node(tsu.get_next_node(current_node, true, true));
     child();
   end
 end
@@ -59,7 +44,6 @@ local function parent()
   local current_position = initial_position;
 
   while current_position[1] == initial_position[1]
-    -- and current_position[2] == initial_position[2] 
     and parent ~= nil do
     tsu.goto_node(parent);
     current_position = vim.api.nvim_win_get_cursor(0);
