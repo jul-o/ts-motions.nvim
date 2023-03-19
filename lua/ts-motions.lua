@@ -29,44 +29,53 @@ end
 
 local function next_sibling(initial_node)
   initial_node = initial_node or tsu.get_node_at_cursor();
+  if (initial_node:parent() == nil) then
+    return false;
+  end
   local siblings = tsu.get_named_children(initial_node:parent());
-  local found = false
-
   local initial_row = vim.api.nvim_win_get_cursor(0)[1]
-
   local current_index = 1
-
-  for i, sibling in ipairs(siblings) do
-    if sibling == initial_node and siblings[i + 1] ~= nil then
-      -- found = true
-      current_index = i
-      -- tsu.goto_node(siblings[i + 1])
+  
+  while current_index <= #siblings do
+    if siblings[current_index]:start() >= initial_row then
+      tsu.goto_node(siblings[current_index]);
+      return true;
     end
+    current_index = current_index + 1
   end
 
-
-  while current_index < #siblings and siblings[current_index] ~= nil and vim.api.nvim_win_get_cursor(0)[1] == initial_row do
-    tsu.goto_node(siblings[current_index]);
-    current_index = current_index + 1;
-  end
-
-  while vim.api.nvim_win_get_cursor(0)[1] <= initial_row and initial_node:parent() ~= nil do
-    next_sibling(initial_node:parent())
-  end
+  next_sibling(initial_node:parent())
+  return false;
 end
 
-local function previous_sibling()
-  local current_node = tsu.get_node_at_cursor();
-  local sibling = tsu.get_previous_node(current_node, true, true);
+local function previous_sibling(initial_node)
+  initial_node = initial_node or tsu.get_node_at_cursor();
+  if (initial_node:parent() == nil) then
+    return false;
+  end
 
-  tsu.goto_node(sibling)
+  local siblings = tsu.get_named_children(initial_node:parent());
+  local initial_row = vim.api.nvim_win_get_cursor(0)[1]
+  local current_index = #siblings
+
+  while current_index >= 1 do
+    if siblings[current_index]:start() < initial_row - 1 then
+      print(siblings[current_index]:start(), initial_row - 1)
+      tsu.goto_node(siblings[current_index]);
+      return true;
+    end
+    current_index = current_index - 1
+  end
+
+  previous_sibling(initial_node:parent())
+  return false;
 end
 
 local function setup()
   vim.api.nvim_create_user_command("JumpToChild", child, {});
   vim.api.nvim_create_user_command("JumpToParent", parent, {});
   vim.api.nvim_create_user_command("JumpToNextSibling", function() next_sibling(tsu.get_node_at_cursor()) end, {});
-  vim.api.nvim_create_user_command("JumpToPreviousSibling", previous_sibling, {});
+  vim.api.nvim_create_user_command("JumpToPreviousSibling", function() previous_sibling(tsu.get_node_at_cursor()) end, {});
 end
 
 return {
