@@ -17,8 +17,15 @@ local function child()
   local children = tsu.get_named_children(current_node);
 
   if #children == 0 then
+    if tsu.get_next_node(current_node, true, true) ~=nil and tsu.get_next_node(current_node, true, true):start() == current_node:start() then
+      tsu.goto_node(tsu.get_next_node(current_node, true, true));
+      child();
+      return true
+    end
     return false;
   end
+
+  print('o')
 
   for _, son in ipairs(children) do
     if son:start() ~= current_node:start() or has_child_on_other_line(son) then
@@ -30,10 +37,7 @@ local function child()
     end
   end
 
-  if tsu.get_next_node(current_node, true, true):start() == current_node:start() then
-    tsu.goto_node(tsu.get_next_node(current_node, true, true));
-    child();
-  end
+
 end
 
 local function parent()
@@ -89,7 +93,6 @@ local function previous_sibling(initial_node)
 
   while current_index >= 1 do
     if siblings[current_index]:start() < initial_row - 1 then
-      print(siblings[current_index]:start(), initial_row - 1)
       tsu.goto_node(siblings[current_index]);
       return true;
     end
